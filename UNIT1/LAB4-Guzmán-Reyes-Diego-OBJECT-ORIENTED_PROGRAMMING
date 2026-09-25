@@ -1,0 +1,140 @@
+import re
+
+class Producto:
+    def __init__(self, nombre: str, precio: float, tipo: str):
+        self.nombre = nombre
+        self.precio = precio
+        self.tipo = tipo
+
+    def calcular_precio_final(self) -> float:
+        return self.precio
+
+class ProductoElectronico(Producto):
+    def __init__(self, nombre: str, precio: float):
+        super().__init__(nombre, precio, "electronico")
+
+    def calcular_precio_final(self) -> float:
+        return self.precio * 1.16
+
+class ProductoRopa(Producto):
+    def __init__(self, nombre: str, precio: float):
+        super().__init__(nombre, precio, "ropa")
+
+    def calcular_precio_final(self) -> float:
+        return self.precio * 1.08
+
+class ProductoAlimento(Producto):
+    def __init__(self, nombre: str, precio: float):
+        super().__init__(nombre, precio, "alimento")
+
+    def calcular_precio_final(self) -> float:
+        return self.precio * 1.00
+
+class Pedido:
+    def __init__(self, numero: int, cliente: str):
+        self.numero = numero
+        self.cliente = cliente
+        self.productos = []
+        self.estado = "CREADO"
+
+    def agregar_producto(self, producto: Producto):
+        self.productos.append(producto)
+
+    def vaciar_carrito(self):
+        self.productos.clear()
+
+    def calcular_total(self) -> float:
+        return sum(producto.calcular_precio_final() for producto in self.productos)
+
+    def cambiar_estado(self, nuevo_estado: str):
+        self.estado = nuevo_estado
+
+    def mostrar_pedido(self):
+        print(f"\nPedido #{self.numero}\nCliente: {self.cliente}\nEstado: {self.estado}\nProductos:")
+        if not self.productos:
+            print("  (Carrito vacío)")
+        else:
+            for producto in self.productos:
+                print(f"- {producto.nombre}: ${producto.precio:,.2f}")
+        print(f"Total: ${self.calcular_total():,.2f}")
+
+def parsear_precio(entrada: str) -> float:
+    e = entrada.strip()
+    if "," in e and "." in e:
+        e = e.replace(",", "")
+    elif "," in e and "." not in e:
+        e = e.replace(",", ".")
+    return float(e)
+
+def menu():
+    pedido_actual = None
+    contador_pedidos = 1001
+    while True:
+        print("\n--- SISTEMA DE PEDIDOS ---")
+        print("1. Crear nuevo pedido")
+        print("2. Agregar producto al pedido")
+        print("3. Ver información del pedido")
+        print("4. Vaciar carrito / Cancelar productos")
+        print("5. Cambiar estado del pedido")
+        print("6. Salir")
+        opcion = input("Selecciona una opción (1-6): ").strip()
+        if opcion == "1":
+            cliente = input("Nombre del cliente: ").strip()
+            if not cliente:
+                print("❌ El nombre no puede estar vacío.")
+                continue
+            pedido_actual = Pedido(contador_pedidos, cliente)
+            print(f"✅ Pedido #{contador_pedidos} asignado e iniciado para '{cliente}'.")
+            contador_pedidos += 1
+        elif opcion == "2":
+            if pedido_actual is None:
+                print("⚠️ Primero debes crear un pedido.")
+                continue
+            print("Tipos de Producto: 1. Electrónico | 2. Ropa | 3. Alimento")
+            tipo_opcion = input("Tipo (1-3): ").strip()
+            nombre = input("Nombre del producto: ").strip()
+            precio_raw = input("Precio del producto (ej. 1,500.00 ó 1500.00): ")
+            try:
+                precio = parsear_precio(precio_raw)
+                if precio < 0:
+                    raise ValueError
+            except ValueError:
+                print("❌ Precio inválido.")
+                continue
+            if tipo_opcion == "1":
+                producto = ProductoElectronico(nombre, precio)
+            elif tipo_opcion == "2":
+                producto = ProductoRopa(nombre, precio)
+            elif tipo_opcion == "3":
+                producto = ProductoAlimento(nombre, precio)
+            else:
+                print("❌ Opción de tipo inválida.")
+                continue
+            pedido_actual.agregar_producto(producto)
+            print(f"✅ Producto '{nombre}' agregado.")
+        elif opcion == "3":
+            if pedido_actual is None:
+                print("⚠️ No hay un pedido activo.")
+            else:
+                pedido_actual.mostrar_pedido()
+        elif opcion == "4":
+            if pedido_actual is None:
+                print("⚠️ No hay un pedido activo.")
+            else:
+                pedido_actual.vaciar_carrito()
+                print("✅ Carrito vaciado correctamente.")
+        elif opcion == "5":
+            if pedido_actual is None:
+                print("⚠️ No hay un pedido activo.")
+            else:
+                nuevo_estado = input("Nuevo estado (ej. ENVIADO, CANCELADO): ").strip()
+                pedido_actual.cambiar_estado(nuevo_estado)
+                print(f"✅ Estado actualizado a: {pedido_actual.estado}")
+        elif opcion == "6":
+            print("¡Programa terminado!")
+            break
+        else:
+            print("❌ Opción inválida.")
+
+if __name__ == "__main__":
+    menu()
